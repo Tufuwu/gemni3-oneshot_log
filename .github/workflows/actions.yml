@@ -1,24 +1,24 @@
 name: CI
-on:
-  - push
-  - pull_request
+
+on: [push, pull_request]
+
 jobs:
-  test:
-    name: Node.js ${{ matrix.node-version }}
+  build:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version:
-          - 9
-          - 8
-          - 7
-          - 6
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node-version }}
-      - run: npm install
-      - run: npm test
+    - uses: actions/checkout@v3
+    - name: Use Node.js LTS
+      uses: actions/setup-node@v3
+      with:
+        node-version: 'lts/*'
+        cache: 'npm'
+    - run: npm install
+    - run: npm run build:prod
+    - run: npm run test:coverage
+    - run: npm run lint
+    - name: Upload coverage to Codecov
+      run: |
+        curl -Os https://uploader.codecov.io/latest/linux/codecov
+        chmod +x codecov
+        ./codecov -t ${{ secrets.CODECOV_TOKEN }}
 
