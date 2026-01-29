@@ -1,29 +1,26 @@
-name: Test
+name: unit testing
+
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-permissions:
-  contents: read
+    branches: [ main ]
+
 jobs:
   test:
     runs-on: ubuntu-latest
+
     strategy:
       matrix:
-        node-version:
-          - node
-    name: Node.js ${{ matrix.node-version }}
+        node-version: [ 14, 16, 18 ]
+
+    name: "Test with NodeJS v${{ matrix.node-version }}"
     steps:
-      - name: Checkout the repository
-        uses: actions/checkout@v4
-      - name: Install Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: npm
-      - name: Install dependencies
-        run: npm install
-      - name: Run unit tests
-        run: npm run test
+       - uses: actions/checkout@v3
+       - name: Setup NodeJS v${{ matrix.node-version }}
+         uses: actions/setup-node@v3
+         with:
+            node-version: ${{ matrix.node-version }}
+       - run: npm ci
+       - run: npm test
 
