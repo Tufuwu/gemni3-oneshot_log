@@ -1,6 +1,7 @@
-name: CI
+name: test
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -9,22 +10,26 @@ on:
       - main
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Use Node.js
+      - name: Setup node
         uses: actions/setup-node@v3
         with:
-          node-version: 'latest'
-          cache: 'npm'
+          node-version: 'stable'
 
       - name: Install dependencies
-        run: npm install
+        run: |
+          npm install -g codecov
+          npm install boolbase nth-check htmlparser2
+          npm install tape tap-spec istanbul
 
-      - name: Run lint
-        run: npm run lint
+      - name: Run coverage
+        run: npm run coverage
+
+      - name: Upload to Codecov
+        run: codecov
 
