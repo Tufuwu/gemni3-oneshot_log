@@ -1,25 +1,31 @@
 name: CI
-
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+"on": [push, pull_request]
 
 jobs:
-  build:
+  test:
+    name: JSDOM ${{matrix.jsdom}} / Karma ${{matrix.karma}}
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        node-version: [node, 18, 16, 14]
+        node: [16]
+        jsdom: [15, 16, 17, 18, 19, 20, 21, 22]
+        karma: [2, 3, 4, 5, 6]
 
     steps:
       - uses: actions/checkout@v3
-      - name: Use Node.js ${{ matrix.node-version }}
+
+      - name: Use Node.js ${{matrix.node}}
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: ${{matrix.node}}
           cache: 'npm'
-      - run: npm install
-      - run: npm test
+
+      - name: Install dependencies
+        run: |
+          npm install jsdom@${{matrix.jsdom}} karma@${{matrix.karma}}
+          [ -e node_modules/karma-jsom-launcher ] || ln -s ../ node_modules/karma-jsom-launcher
+
+      - name: Run tests
+        run: npm test
 
