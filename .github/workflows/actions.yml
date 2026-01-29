@@ -2,32 +2,28 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
-      - main
+    branches: [ main ]
   pull_request:
+    branches: [ main ]
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [10.x, 12.x]
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 'node'
-
-      - name: Install dependencies
-        run: |
-          make install-checkstyle
-          sudo apt update
-          sudo apt install -qy gjs libgjs-dev
-
-      - name: Run checkstyle
-        run: make checkstyle
-
-      - name: Run tests
-        run: make test
+    - uses: actions/checkout@v4
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: npm ci
+    - run: npm test
+    - name: Coveralls
+      uses: coverallsapp/github-action@v2.3.3
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
 
