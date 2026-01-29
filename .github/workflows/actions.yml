@@ -1,45 +1,48 @@
 name: CI
 
 on:
-  workflow_dispatch:
-  pull_request:
   push:
-    branches:
-      - main
-
-permissions:
-  contents: read
+  pull_request:
 
 jobs:
-  test:
-    name: Test
+  tests:
+    runs-on: ubuntu-24.04
     strategy:
-      fail-fast: false
       matrix:
-        python-version: ["3.9"]
-        os: [ubuntu-24.04]
-
-    runs-on: ${{ matrix.os }}
+        tox-env: [py38, flake8]
+        include:
+          - tox-env: py38
+            python-version: "3.8"
+          - tox-env: flake8
+            python-version: "3.8"
+    
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
+
+      - name: Mock Python gi package
+        run: |
+          PYUSRSITEDIR=$(python -m site --user-site)
+          mkdir -p $PYUSRSITEDIR
+          echo "import sys; import mock; sys.modules['gi'] = mock.Mock(); sys.modules['gi.repository'] = mock.Mock(); sys.modules['gi.repository'].Gst.version.side_effect = lambda: (1, 14, 0)" > ${PYUSRSITEDIR}/usercustomize.py
 
       - name: Install dependencies
         run: |
-          python3 -m pip install -U pip
-          pip install sphinx==3.2.1 pyspark==3.0.1 tensorflow-cpu==1.15.0
+          pip install tox
 
-      - name: Build documentation
-        run: |
-          pushd docs/ && PYTHONPATH=.. make clean html && popd
+      - name: Run tox
+        run: tox -e ${{ matrix.tox-env }}
 
-      - name: Run tests
+      - name: Coverage report
+        if: success() && matrix.tox-env == 'py38'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          pytest
+          pip install coveralls requests
+          coveralls
 
