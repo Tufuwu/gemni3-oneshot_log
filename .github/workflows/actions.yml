@@ -1,26 +1,29 @@
-name: Node.js CI
+name: Test
 on:
   push:
     branches:
       - main
   pull_request:
-    branches:
-      - main
-
+permissions:
+  contents: read
 jobs:
   test:
-    name: Run tests (Node.js ${{ matrix.node }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: [12]
+        node-version:
+          - node
+    name: Node.js ${{ matrix.node-version }}
     steps:
-      - name: Clone repository
-        uses: actions/checkout@v3
-      - name: Set up Node.js
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+      - name: Install Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node }}
-      - run: npm install
-      - run: npm test
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - name: Install dependencies
+        run: npm install
+      - name: Run unit tests
+        run: npm run test
 
