@@ -1,35 +1,23 @@
-name: Unit Tests
+name: Node.js CI
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+on: [push, pull_request]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [0.12.x, 4.2.x, 5.0.x]
-
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js 14
         uses: actions/setup-node@v2
         with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: Install npm 2.14.5
-        run: npm install -g npm@2.14.5
+          node-version: '14'
 
       - name: Install dependencies
         run: npm install
 
       - name: Run tests
         run: npm test
-        env:
-          DEBUG: "*"
 
