@@ -1,28 +1,42 @@
-name: Tests
+name: ci
 
-on: [push, pull_request]
-
-permissions:
-  contents: read
+on:
+  push:
+    branches:
+      - main
+      - 'releases/**'
 
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9"]
+        python-version: ["3.8", "3.9", "3.10"]
 
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Run tests
-        run: |
-          make cfn-lint
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Before install
+      run: |
+        echo "TZ=Asia/Seoul" >> $GITHUB_ENV
+        python --version
+        pip install -U pip
+        pip install codecov
+
+    - name: Install dependencies
+      run: pip install -e .[dev]
+
+    - name: Run tests
+      run: coverage run --omit="*/test*" -m unittest discover ./tests/ *test.py
+
+    - name: Submit coverage
+      run: codecov
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
