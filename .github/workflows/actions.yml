@@ -1,54 +1,28 @@
-name: CI
-
+name: build
 on:
   push:
-    branches:
-      - main
   pull_request:
-
-  group: ${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
-
 jobs:
-  tests:
-    name: Python ${{ matrix.python-version }}
+  build:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         python-version:
-          - "3.9"
-          - "3.10"
-          - "3.11"
-
-    env:
-      TRAVIS: "True"
-
+          - "2.7"
+          - "3.4"
+          - "3.5"
+          - "3.6"
     steps:
-      - uses: actions/checkout@v3
-
+      - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-
-      - name: Before install
-        run: |
-          chmod +x download_etcd.sh
-          ./download_etcd.sh 3.4.0
-          python -m pip install --upgrade pip setuptools
-
       - name: Install dependencies
-        run: |
-          pip install coveralls coverage pytest tox-travis
-          bin/buildout
-
+        run: pip install pytest pytest-cov coveralls
       - name: Run tests
-        run: tox
-
-      - name: Upload Coverage
-        if: success()
+        run: py.test --cov validictory --cov-config=.coveragerc
+      - name: Upload coverage
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: coveralls
