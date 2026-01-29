@@ -1,44 +1,56 @@
-on: [pull_request, push]
+name: CI
+
+on:
+  push:
+  pull_request:
+
 jobs:
-  build:
+  test:
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.8", "3.9", "3.10", "3.11"]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-          cache: 'pip'
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip setuptools
-          pip install -U tox
-          tox --notest
-      - name: Run tox
-        run: tox
-        env:
-          TOXENV: py
+        python-version: ['3.8', '3.9', '3.10-dev', 'nightly']
+        include:
+          - python-version: '3.10-dev'
+            experimental: true
+          - python-version: 'nightly'
+            experimental: true
 
-  lint:
-    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: 'pip'
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip setuptools
-          pip install -U tox
-          tox --notest
-      - name: Run lint
-        run: tox
-        env:
-          TOXENV: lint
+    - uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Cache pip
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install tools
+      run: |
+        python3 -m pip install -U coverage codecov mypy
+
+    - name: Install dependencies
+      run: |
+        python3 -m pip install -r requirements.txt
+
+    - name: Run tests
+      continue-on-error: ${{ matrix.experimental || false }}
+      run: |
+        python3 -m coverage run --branch -m unittest discover -t . -s ni/test/
+
+    - name: Run static analysis
+      continue-on-error: ${{ matrix.experimental || false }}
+      run: |
+        python3 -m mypy ni/*.py
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
 
