@@ -1,35 +1,45 @@
-name: Run tests
-on: [push, pull_request]
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  Run-Tests:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-20.04  # Equivalent to dist: focal
     strategy:
       matrix:
-        include:
-          - python-version: '3.8'
-            TOXENV: py38
-          - python-version: '3.9'
-            TOXENV: py39
-          - python-version: '3.10'
-            TOXENV: py10
-          - python-version: '3.11'
-            TOXENV: py311
-          - python-version: '3.12'
-            TOXENV: py312
+        python-version: ["3.8", "3.9", "3.10"]
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v3
+
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
-          python-version: '${{ matrix.python-version }}'
-      - name: Install dependencies
-        run: pip install tox codecov
-      - name: Run tox
-        run: tox
-        env:
-          TOXENV: '${{ matrix.TOXENV }}'
-      - name: Upload coverage
-        if: success()
-        run: codecov
+          python-version: ${{ matrix.python-version }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 'lts/*' # Equivalent to nvm install/use
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -r requirements-dev.txt
+
+      - name: Run Scripts
+        run: |
+          cp django_airavata/settings_local.py.sample django_airavata/settings_local.py
+          python manage.py migrate
+          python manage.py check
+          flake8 .
+          ./lint_js.sh
+          ./build_js.sh
+          ./test_js.sh
+          ./runtests.py
 
