@@ -1,27 +1,35 @@
-name: CI
-on: [push, pull_request]
+name: Tests
+
+on:
+  push:
+  pull_request:
+
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  tests:
+    runs-on: ubuntu-24.04
+    continue-on-error: ${{ matrix.django-version == 'master' }}
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ['3.8']
+        django-version: ['2.2', '3.0', '3.1', '3.2', '4.0', 'master']
+
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
+
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
-          pip install pytest pytest-cov coverage
-      - name: Run tests
-        run: pytest --cov=./
-      - name: Upload coverage to Codecov
-        if: success()
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          python -m pip install --upgrade pip
+          if [ "${{ matrix.python-version }}" = "3.8" ]; then pip install -U importlib_metadata; fi
+          pip install tox tox-venv
+
+      - name: Run tox
+        env:
+          DJANGO: ${{ matrix.django-version }}
+        run: tox
 
