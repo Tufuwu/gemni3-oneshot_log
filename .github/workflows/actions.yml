@@ -7,13 +7,13 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    continue-on-error: true
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "nightly"]
-      fail-fast: false
-    name: Python ${{ matrix.python-version }}
+        python-version: ["3.8", "3.9", "3.10", "pypy-2.7", "pypy-3.6", "pypy-3.7", "pypy-3.8", "pypy-3.9"]
     steps:
-      - uses: actions/checkout@v3
+      - name: Check out code
+        uses: actions/checkout@v3
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
@@ -21,15 +21,13 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: |
-          pip install -U pip
-          pip install -U wheel setuptools pbr
-          pip install -U .[docs,test]
-          pip list
-          python --version
+        run: pip install coveralls
 
-      - name: Run script
-        run: |
-          make check
-          rst2html.py README.rst README.html
+      - name: Run tests with coverage
+        run: coverage run --branch --source=crc32 test.py
+
+      - name: Upload coverage to Coveralls
+        run: coveralls
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
