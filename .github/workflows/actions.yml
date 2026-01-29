@@ -1,24 +1,26 @@
-name: CI
-
+name: Node.js CI
 on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
       - main
-  pull_request: {}
 
 jobs:
-  build:
+  test:
+    name: Run tests (Node.js ${{ matrix.node }})
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        node: [12]
     steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js 10
-      uses: actions/setup-node@v3
-      with:
-        node-version: 10.x
-        cache: 'yarn'
-    - run: yarn install
-    - run: yarn test
-    - run: yarn lint-on-ci
+      - name: Clone repository
+        uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm install
+      - run: npm test
 
