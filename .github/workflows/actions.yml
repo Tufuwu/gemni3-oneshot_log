@@ -1,37 +1,28 @@
 name: CI
-
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-
 jobs:
   test:
-    name: Test on Node.js ${{ matrix.node-version }} (${{ matrix.arch }})
-    runs-on: ${{ matrix.arch == 'amd64' && 'ubuntu-latest' || 'ubuntu-22.04' }}
-
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: ["18"]
-        arch: [amd64, ppc64le]
-      fail-fast: false
-
+        node: [8, 10, 12, 14]
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out repository
+        uses: actions/checkout@v3
 
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
-          architecture: ${{ matrix.arch == 'amd64' && 'x64' || 'ppc64le' }}
-
-      - name: Before Install
-        run: git --version
+          node-version: ${{ matrix.node }}
+          check-latest: true
+          cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Run Tests
+      - name: Run tests
         run: npm test
-
