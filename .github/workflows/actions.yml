@@ -1,60 +1,28 @@
-name: CI/CD
-
+name: build
 on:
   push:
-    branches:
-      - main
-    tags:
-      - '*'
   pull_request:
-
 jobs:
-  build-and-test:
-    runs-on: ubuntu-24.04
+  build:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Set up Python 3.8
+      - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
-          python-version: '3.8'
-
+          python-version: '3.10'
       - name: Install dependencies
+        run: pip3 install -r requirements.txt || pip install -r requirements.txt
+      - name: Lint with flake8
         run: |
-          python -m pip install --upgrade pip
-          python -m pip list
-
-      - name: Lint and Test
+          pip install flake8
+          flake8 --ignore=E501,W503
+      - name: Test with pytest
         run: |
-          chmod +x lint.sh test.sh
-          ./lint.sh && ./test.sh
-
-      - name: SonarCloud Scan
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository == 'IBM/qpylib'
-        uses: sonarsource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-      - name: Build Package
-        run: |
-          chmod +x build.sh
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            TAG_NAME=${GITHUB_REF#refs/tags/}
-            ./build.sh "${TAG_NAME}"
-          else
-            ./build.sh "0.0.dev${{ github.run_number }}"
-          fi
-
-      - name: Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
+          pip install pytest pytest-cov
+          pytest -v --cov-report=xml --cov=src/sdialog
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
         with:
-          files: |
-            dist/qpylib-${{ github.ref_name }}.tar.gz
-            dist/qpylib-${{ github.ref_name }}-py3-none-any.whl
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          file: ./coverage.xml
 
