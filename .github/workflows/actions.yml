@@ -1,28 +1,25 @@
-name: CI
-on: [push, pull_request]
-permissions:
-  contents: read
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   test:
+    runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest]
-        node: [18, 16, 14]
-    name: Test
-    runs-on: ${{ matrix.os }}
-
+        node-version: ["22", "20", "18"]
     steps:
       - uses: actions/checkout@v3
-
-      - uses: actions/setup-node@v3
-        name: Use Node.js ${{ matrix.node }}
+      - name: Use Node ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node }}
-
-      - name: Install
-        run: npm ci
-
-      - name: Test
-        run: npm run test
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test
 
