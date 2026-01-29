@@ -1,58 +1,35 @@
-name: CI
-
-on:
-  push:
-    branches: [ main ]
-    tags: [ '*' ]
-  pull_request:
-    branches: [ main ]
+name: Run tests
+on: [push, pull_request]
 
 jobs:
-  test:
+  Run-Tests:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
-        python-version: ["3.6", "3.7", "3.8", "3.9"]
-
+        include:
+          - python-version: '3.8'
+            TOXENV: py38
+          - python-version: '3.9'
+            TOXENV: py39
+          - python-version: '3.10'
+            TOXENV: py10
+          - python-version: '3.11'
+            TOXENV: py311
+          - python-version: '3.12'
+            TOXENV: py312
     steps:
-    - uses: actions/checkout@v2
-
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Run tests and linting
-      run: |
-        pytest
-        mypy pyteal
-        python3 -c "import pyteal" scripts/generate_init.py --check
-        black --check .
-
-  release:
-    needs: test
-    if: startsWith(github.ref, 'refs/tags/') && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v2
-      with:
-        python-version: "3.9"
-
-    - name: Build and publish
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-      run: |
-        pip install setuptools wheel twine
-        python setup.py sdist bdist_wheel
-        twine upload dist/*
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: '${{ matrix.python-version }}'
+      - name: Install dependencies
+        run: pip install tox codecov
+      - name: Run tox
+        run: tox
+        env:
+          TOXENV: '${{ matrix.TOXENV }}'
+      - name: Upload coverage
+        if: success()
+        run: codecov
 
