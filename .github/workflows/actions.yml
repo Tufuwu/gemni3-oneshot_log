@@ -7,46 +7,36 @@ on:
   pull_request:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:9.6
-        env:
-          POSTGRES_DB: sequelize
-          POSTGRES_HOST_AUTH_METHOD: trust
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Setup Node.js
+      - name: Use Node.js 12
         uses: actions/setup-node@v3
         with:
-          node-version: 'node'
+          node-version: '12'
+          cache: 'npm'
+
+      - name: Start LocalStack
+        run: |
+          docker pull localstack/localstack
+          docker run --rm -d -p 4566:4566 localstack/localstack
 
       - name: Install dependencies
         run: npm install
 
-      - name: Run tests
-        run: npm test
-
-      - name: Compute and Publish Coverage
+      - name: Lint and Test
         run: |
-          ./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha --report lcovonly test/overall.test.js -- --exit
-          cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js
-        env:
-          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-          NODE_ENV: test
+          npm run lint
+          npm run test
+
+      - name: Integration Test
+        run: |
+          npm link
+          sleep 5
+          SLS_DEBUG=1 npm run test:integration
 
