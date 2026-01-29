@@ -1,33 +1,29 @@
 name: CI
-
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version: [12.x, 14.x, 16.x, 17.x]
-        os: [ubuntu-latest]
-        winston-version: [winston@3]
-
-    runs-on: ${{ matrix.os }}
-
+  build-and-test:
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'latest'
+          cache: 'npm'
 
-    - name: Install dependencies
-      run: npm install ${{ matrix.winston-version }}
+      - name: Install dependencies
+        run: |
+          npm install
+          make clean
+          make
 
-    - name: Install project dependencies
-      run: npm install
-
-    - name: Run tests
-      run: npm test
+      - name: Run tests
+        run: npx mocha-headless-chrome -a no-sandbox -f test/index.html
 
