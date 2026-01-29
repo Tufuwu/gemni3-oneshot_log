@@ -1,26 +1,53 @@
 name: CI
+
 on:
   push:
-    branches:
-      - main
   pull_request:
+
 jobs:
   test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.8", "3.9", "3.10", "pypy-3.7"]
     name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-24.04 # Equivalent to focal
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.8"
+          - "3.9"
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "pypy-3.8"
+          - "pypy-3.9"
+          - "pypy-3.10"
+          - "pypy-3.11"
+        include:
+          - python-version: "nightly"
+
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install tox
+
+      - name: Install dependencies
         run: |
-          pip install tox
-      - name: Run tox
-        run: tox
+          python -m pip install --upgrade pip
+          pip install --upgrade pytest coveralls coverage
+
+      - name: Run tests
+        run: |
+          pwd
+          coverage run --source=neat -m pytest tests
+
+      - name: Upload Coverage to Coveralls
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          coveralls
 
