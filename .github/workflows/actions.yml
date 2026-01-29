@@ -1,4 +1,4 @@
-name: unit testing
+name: Node.js CI
 
 on:
   push:
@@ -7,20 +7,19 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        node-version: [ 14, 16, 18 ]
+        node-version: [16.x, node]
 
-    name: "Test with NodeJS v${{ matrix.node-version }}"
     steps:
-       - uses: actions/checkout@v3
-       - name: Setup NodeJS v${{ matrix.node-version }}
-         uses: actions/setup-node@v3
-         with:
-            node-version: ${{ matrix.node-version }}
-       - run: npm ci
-       - run: npm test
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: npm install
+    - run: npm test
 
