@@ -1,35 +1,35 @@
-name: test
+name: Unit Tests
 
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
 
-      - name: Setup node
-        uses: actions/setup-node@v3
+    strategy:
+      matrix:
+        node-version: [0.12.x, 4.2.x, 5.0.x]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
         with:
-          node-version: 'stable'
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install npm 2.14.5
+        run: npm install -g npm@2.14.5
 
       - name: Install dependencies
-        run: |
-          npm install -g codecov
-          npm install boolbase nth-check htmlparser2
-          npm install tape tap-spec istanbul
+        run: npm install
 
-      - name: Run coverage
-        run: npm run coverage
-
-      - name: Upload to Codecov
-        run: codecov
+      - name: Run tests
+        run: npm test
+        env:
+          DEBUG: "*"
 
