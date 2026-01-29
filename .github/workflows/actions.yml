@@ -1,26 +1,21 @@
-name: Node.js CI
+name: CI
 
 on:
   push:
-    branches: [ main, main ]
+    branches: ['main']
   pull_request:
-    branches: [ main, main ]
+    types: [opened, synchronize]
 
 jobs:
   build:
+    name: Node.js 20 CI
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [4.x]
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: npm install
-    - run: npm test
+      - uses: actions/checkout@v4
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm test
 
