@@ -1,41 +1,24 @@
-name: Node.js CI
-
+name: CI
 on:
-  push:
-    branches: [ main, main ]
-  pull_request:
-    branches: [ main, main ]
-
+  - push
+  - pull_request
 jobs:
-  build:
-    runs-on: ubuntu-20.04
+  test:
+    name: Node.js ${{ matrix.node-version }}
+    runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        node-version: [20, 18, 16, 14, 12]
-        arch: [amd64]
-    
+        node-version:
+          - 9
+          - 8
+          - 7
+          - 6
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
-
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
-
-      - name: Install System Dependencies
-        run: |
-          sudo apt-get -qq update
-          sudo apt-get install -y python3 php-cli
-          if [[ $(uname -m) == 's390x' ]]; then
-            sudo apt-get install -y bc
-          fi
-
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Run Scripts
-        run: npm test
+      - run: npm install
+      - run: npm test
 
