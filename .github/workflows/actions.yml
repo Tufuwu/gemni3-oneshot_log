@@ -1,31 +1,55 @@
-name: CI
+name: "Test Suite"
+
 on:
   push:
     branches:
       - main
-      - dev
   pull_request:
-    types: [opened, synchronize, reopened]
-jobs:
+  workflow_dispatch:
+
+defaults:
   run:
-    runs-on: ${{ matrix.operating-system }}
+    shell: bash
+
+jobs:
+  tests:
+    name: "Python ${{ matrix.python-version }} tests"
+    runs-on: "ubuntu-latest"
+
     strategy:
+      fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest]
-        python-version: ['3.8']
-    name: Python ${{ matrix.python-version }} Test on ${{ matrix.operating-system }}
+        python-version:
+          - "pypy-3.8"
+          - "pypy-2.7"
+          - "3.11"
+          - "3.10"
+          - "3.9"
+          - "3.8"
+
+    env:
+      TOXENV: base,optional,six19-optional
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: "Check out the repo"
+        uses: "actions/checkout@v4"
+
+      - name: "Set up Python"
+        uses: "actions/setup-python@v4"
         with:
-          python-version: ${{ matrix.python-version }}
-          architecture: x64
-      - name: Run tests
+          python-version: "${{ matrix.python-version }}"
+          cache: 'pip'
+
+      - name: "Install tox"
         run: |
-          python setup.py sdist
-          cd dist/
-          tar xf hsluv-*.tar.gz
-          cd hsluv-*/
-          python setup.py test
+          python -m pip install tox
+
+      - name: "Run tox"
+        run: |
+          tox
+
+      - name: "Debug info"
+        if: always()
+        run: |
+          python debug-info.py
+
