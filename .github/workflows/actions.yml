@@ -1,15 +1,28 @@
 name: CI
-
 on: [push, pull_request]
+permissions:
+  contents: read
 
 jobs:
-  validate:
-    runs-on: ubuntu-latest
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node: [14, 15, 16, 18]
+    name: Test
+    runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@v3
+
       - uses: actions/setup-node@v3
+        name: Use Node.js ${{ matrix.node }}
         with:
-          node-version: '10'
-      - run: npm install -g ajv-cli
-      - run: ajv validate -s schema.json -d data.json
+          node-version: ${{ matrix.node }}
+
+      - name: Install
+        run: npm ci
+
+      - name: Test
+        run: npm run test
 
