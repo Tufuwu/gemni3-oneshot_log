@@ -1,35 +1,23 @@
-name: CI
-
+name: Node.js CI
 on:
   push:
-    branches:
-      - main
-
-permissions:
-  contents: read
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [16.x]
-        ci_action: ["npm run dist", "npm run test:ci"]
-
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+          node-version: 14
 
       - name: Install dependencies
         run: npm install
 
-      - name: Run CI Action
-        run: ${{ matrix.ci_action }}
-
+      - name: Run tests
+        run: npm test
