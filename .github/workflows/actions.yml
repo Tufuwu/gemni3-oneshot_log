@@ -1,33 +1,41 @@
-name: Continuous integration
-on: [push]
-jobs:
-  inspector-view:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run checkout
-        uses: actions/checkout@v3
-      - name: Use Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 'lts/*'
-          cache: 'yarn'
-      - name: Install dependencies
-        run: yarn install
-      - name: Build inspector view
-        run: yarn build:inspectorView
+name: tests
 
-  edit-mode:
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.8', '3.9']
+
+    env:
+      NUMPY_VERSION: stable
+      ASTROPY_VERSION: stable
+      SETUP_CMD: 'test'
+      PIP_DEPENDENCIES: ''
+      CONDA_DEPENDENCIES: 'scipy pytest-cov'
+
     steps:
-      - name: Run checkout
-        uses: actions/checkout@v3
-      - name: Use Node.js
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          node-version: 'lts/*'
-          cache: 'yarn'
-      - name: Install dependencies
-        run: yarn install
-      - name: Build edit mode
-        run: yarn build:editMode
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Dependencies
+        run: |
+          git clone git://github.com/astropy/ci-helpers.git
+          # Note: ci-helpers usually requires a shell that supports 'source' 
+          # and specific environment variables to mimic Travis behavior.
+          export TRAVIS_OS_NAME=linux
+          export TRAVIS_PYTHON_VERSION=${{ matrix.python-version }}
+          source ci-helpers/travis/setup_conda_$TRAVIS_OS_NAME.sh
+
+      - name: Run tests
+        run: py.test
 
