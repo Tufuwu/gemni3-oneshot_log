@@ -1,27 +1,24 @@
 name: CI
-on: [push, pull_request]
-permissions:
-  contents: read
+on:
+  push:
+  pull_request:
 
 jobs:
   test:
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-24.04]
-        node: [16, 17, 18, 19]
-    name: Test
+        os: [ubuntu-latest]
+        arch: [x64, ppc64le]
+        node-version: [node, lts/*, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 8]
     runs-on: ${{ matrix.os }}
-
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
+      - name: Use Node.js ${{ matrix.node-version }} (${{ matrix.arch }})
+        uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
-
-      - name: Install
-        run: npm ci
-
-      - name: Test
-        run: npm run test
+          node-version: ${{ matrix.node-version }}
+          architecture: ${{ matrix.arch }}
+      - run: npm install
+      - run: npm test
 
