@@ -1,32 +1,19 @@
-name: CI
-
-on:
-  push:
-    branches: [ main, main ]
-  pull_request:
+name: Tests CI
+on: [push, pull_request]
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  tests:
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10"]
-
+        python-version: ["3.9", "3.10", "3.11", "3.12", "pypy3.10"]
     steps:
-      - uses: actions/checkout@v3
-
+      - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
 
-      - name: Install dependencies
-        run: |
-          pip install -r docs/requirements.txt
-          pip install pytest
-          pip install -e .
-
-      - name: Run tests
-        run: pytest
+      - run: pip install Markdown
+      - run: python test.py
 
