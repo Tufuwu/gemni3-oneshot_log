@@ -1,14 +1,28 @@
-name: github-actions
+name: CI
 on: [push, pull_request]
+permissions:
+  contents: read
+
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node: [18, 16, 14]
+    name: Test
+    runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@v3
+
       - uses: actions/setup-node@v3
+        name: Use Node.js ${{ matrix.node }}
         with:
-          node-version: '14'
-          cache: 'yarn'
-      - run: yarn
-      - run: yarn ci
+          node-version: ${{ matrix.node }}
+
+      - name: Install
+        run: npm ci
+
+      - name: Test
+        run: npm run test
 
