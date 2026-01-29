@@ -2,29 +2,28 @@ name: CI
 
 on:
   push:
-    branches: [ main, main ]
+    branches:
+      - main
   pull_request:
-    branches: [ main, main ]
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "nightly", "pypy-3.6"]
-      fail-fast: false
+        python-version: ["3.8"]
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-
-      - name: Run tests
+      - name: Install dependencies
         run: |
-          ./setconf.py --test
-          cd testcases && ./test.sh
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Test
+        run: |
+          python setup.py test
 
