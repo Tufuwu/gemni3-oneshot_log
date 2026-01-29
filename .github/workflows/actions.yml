@@ -5,23 +5,26 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    strategy:
+      matrix:
+        node-version: [6.x, 7.x, 8.x, 9.x, 10.x]
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
         with:
-          node-version: node
+          node-version: ${{ matrix.node-version }}
 
       - name: Install dependencies
         run: npm install
 
       - name: Run tests
         run: npm test
-
